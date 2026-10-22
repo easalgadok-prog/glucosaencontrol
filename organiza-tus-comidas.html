@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4efe5" />
+  <meta name="description" content="Plato en calma: organiza tus próximas comidas con menos improvisación." />
+  <title>Plato en calma · Organiza tus comidas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /*
+      Plato en calma — Cuaderno de despensa.
+      Este archivo es autocontenido: estilos, estructura e interacciones están aquí.
+      Los cambios del plan semanal se guardan en localStorage del navegador.
+    */
+    :root {
+      --cream: #f4efe5;
+      --paper: #fffdf8;
+      --paper-2: #fbf7ef;
+      --ink: #293a31;
+      --moss: #315c4d;
+      --moss-deep: #274b3e;
+      --sage: #dfe9d2;
+      --sage-soft: #edf2de;
+      --apricot: #e57d59;
+      --apricot-deep: #d36f4c;
+      --tomato: #aa593e;
+      --line: #ded2bd;
+      --muted: #687368;
+      --gold: #f6e5b7;
+      --shadow: 0 20px 50px rgba(76, 69, 48, .09);
+      --ease: cubic-bezier(.23, 1, .32, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: "Manrope", Arial, sans-serif;
+      background-image: radial-gradient(circle at 0 0, rgba(255,255,255,.48), transparent 31rem), radial-gradient(circle at 100% 27%, rgba(213,225,192,.36), transparent 32rem);
+    }
+    body.modal-open { overflow: hidden; }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; }
+    .container { width: min(1376px, calc(100% - 32px)); margin: 0 auto; }
+    .display { font-family: "DM Serif Display", Georgia, serif; }
+    .grain { background-image: radial-gradient(rgba(54, 61, 42, .05) .6px, transparent .6px); background-size: 5px 5px; }
+    .eyebrow { margin: 0; color: var(--tomato); font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    .section-title { margin: 12px 0 0; color: var(--moss); font-size: clamp(2.6rem, 5vw, 4.8rem); line-height: .95; letter-spacing: -.035em; }
+    .section-copy { max-width: 590px; margin: 16px 0 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 45px; border: 0; border-radius: 999px; padding: 0 19px; font-size: 12px; font-weight: 800; transition: transform 160ms var(--ease), background-color 160ms var(--ease), box-shadow 160ms var(--ease), border-color 160ms var(--ease); }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { color: #fffdf8; background: var(--moss); box-shadow: 0 10px 26px rgba(49,92,77,.22); }
+    .btn-primary:hover { background: var(--moss-deep); }
+    .btn-accent { color: #fffdf8; background: var(--apricot); box-shadow: 0 10px 26px rgba(173,75,41,.18); }
+    .btn-accent:hover { background: var(--apricot-deep); }
+    .btn-quiet { color: var(--moss); background: rgba(255,255,255,.55); border: 1px solid #9eb096; }
+    .btn-quiet:hover { background: #fff; }
+    .btn-soft { color: var(--moss); background: #ebe4d5; }
+    .btn-soft:hover { background: #ded2bd; }
+    .icon { width: 16px; height: 16px; flex: 0 0 auto; }
+    .icon-lg { width: 20px; height: 20px; }
+
+    .topbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid rgba(220,211,193,.8); background: rgba(248,244,235,.91); backdrop-filter: blur(18px); }
+    .topbar-inner { height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--moss); text-decoration: none; }
+    .brand-mark { position: relative; width: 38px; height: 38px; display: grid; place-items: center; }
+    .brand-mark::before { content: ""; position: absolute; inset: 3px; border: 3px solid currentColor; border-radius: 50%; }
+    .brand-mark::after { content: ""; position: absolute; right: 3px; bottom: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--apricot); }
+    .brand-mark span { position: relative; width: 14px; height: 14px; border-radius: 50%; background: currentColor; }
+    .brand-name { font-size: 20px; letter-spacing: -.035em; }
+    .main-nav { display: flex; align-items: center; gap: 4px; }
+    .nav-btn { border: 0; border-radius: 999px; padding: 10px 15px; color: #697369; background: transparent; font-size: 12px; font-weight: 800; }
+    .nav-btn:hover, .nav-btn.active { color: #fffdf8; background: var(--moss); }
+    .mobile-menu-btn { display: none; width: 40px; height: 40px; border: 0; border-radius: 50%; color: var(--moss); background: #ebe4d5; }
+    .mobile-menu { display: none; padding: 8px 0 14px; border-top: 1px solid var(--line); }
+    .mobile-menu.open { display: block; }
+    .mobile-menu button { width: 100%; display: block; border: 0; border-radius: 12px; padding: 12px; color: var(--ink); background: transparent; text-align: left; font-size: 14px; font-weight: 800; }
+    .mobile-menu button:hover { background: #ece5d6; }
+
+    .side-index { position: fixed; z-index: 10; top: 104px; left: 16px; display: none; width: 54px; padding: 6px; border: 1px solid #dcd1bf; border-radius: 18px; background: rgba(251,247,239,.95); box-shadow: 0 12px 25px rgba(82,72,51,.09); }
+    .side-index .index-label { margin: 7px 0 10px; color: var(--tomato); font-size: 7px; font-weight: 800; letter-spacing: .15em; text-align: center; writing-mode: vertical-rl; }
+    .side-index nav { border-top: 1px solid #e5dac8; padding-top: 5px; }
+    .side-index button { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 12px; color: #6d7e70; background: transparent; }
+    .side-index button:hover, .side-index button.active { color: #fff; background: var(--moss); }
+    .side-index button span { position: absolute; left: 48px; display: none; white-space: nowrap; padding: 6px 8px; border-radius: 6px; color: #fff; background: var(--moss); font-size: 9px; font-weight: 800; box-shadow: 0 8px 18px rgba(49,92,77,.2); }
+    .side-index button:hover span { display: block; }
+
+    .hero-wrap { padding: 40px 0 28px; }
+    .hero { position: relative; min-height: 560px; overflow: hidden; border-radius: 32px; background: var(--sage); box-shadow: 0 30px 80px rgba(68,81,59,.12); }
+    .hero-image { position: absolute; inset: 0 0 0 48%; overflow: hidden; }
+    .hero-image img { width: 100%; height: 100%; object-fit: cover; }
+    .hero-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--sage) 0%, rgba(223,233,210,.73) 16%, rgba(223,233,210,0) 58%); }
+    .hero-content { position: relative; z-index: 1; min-height: 560px; width: 55%; display: flex; flex-direction: column; justify-content: space-between; padding: 55px; }
+    .hero-kicker { display: flex; align-items: center; gap: 8px; color: #50705f; font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--apricot); }
+    .pill { display: inline-flex; align-items: center; gap: 8px; width: fit-content; padding: 7px 11px; border: 1px solid #a8b99d; border-radius: 999px; color: #466251; background: rgba(233,240,223,.8); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .hero h1 { max-width: 610px; margin: 18px 0 0; color: #263b31; font-size: clamp(4rem, 7vw, 7rem); line-height: .87; letter-spacing: -.055em; }
+    .hero h1 em { color: var(--apricot-deep); }
+    .hero-description { max-width: 470px; margin: 24px 0 0; color: #526158; font-size: 15px; line-height: 1.7; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 30px; }
+    .hero-checks { display: flex; flex-wrap: wrap; gap: 25px; border-top: 1px solid #aac09e; padding-top: 18px; color: #496053; font-size: 11px; font-weight: 800; }
+    .hero-checks span { display: flex; align-items: center; gap: 7px; }
+    .check-symbol { color: var(--apricot); font-size: 16px; }
+    .hero-stamp { position: absolute; z-index: 2; right: 24px; bottom: 22px; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgba(248,244,235,.92); box-shadow: 0 12px 30px rgba(68,81,59,.16); backdrop-filter: blur(8px); }
+    .stamp-ring { position: relative; width: 30px; height: 30px; border: 3px solid var(--moss); border-radius: 50%; }
+    .stamp-ring::after { content: ""; position: absolute; right: -2px; bottom: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--apricot); }
+    .stamp-label { margin: 0; color: var(--tomato); font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .stamp-text { margin: 2px 0 0; color: var(--moss); font-size: 12px; font-weight: 800; }
+
+    .starting-point { display: grid; grid-template-columns: .9fr 1.1fr; overflow: hidden; border: 1px solid var(--line); border-radius: 26px; background: var(--paper-2); }
+    .starting-copy { padding: 38px; color: #f9f5ec; background: var(--moss); }
+    .starting-copy .eyebrow { color: #c7d6bc; }
+    .starting-copy h2 { margin: 14px 0 0; font-size: clamp(2.7rem, 4vw, 4rem); line-height: .95; letter-spacing: -.04em; }
+    .starting-copy p { max-width: 430px; margin: 18px 0 0; color: #d9e4d2; font-size: 14px; line-height: 1.7; }
+    .starting-actions { padding: 28px; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .step-card { padding: 20px; border-radius: 17px; background: #eee6d7; }
+    .step-card .number { display: flex; justify-content: space-between; color: var(--apricot-deep); font-family: "DM Serif Display", Georgia, serif; font-size: 32px; }
+    .step-card .tag { align-self: start; padding: 4px 7px; border-radius: 99px; color: var(--tomato); background: #fffaf0; font-family: "Manrope", Arial, sans-serif; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+    .step-card b { display: block; margin-top: 19px; color: var(--moss); font-size: 13px; }
+    .step-card p { margin: 4px 0 0; color: #788176; font-size: 11px; line-height: 1.5; }
+    .step-cta { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 17px; padding: 16px 18px; border: 1px solid #d7c9b3; border-radius: 16px; color: var(--moss); background: #fff; text-align: left; }
+    .step-cta:hover { border-color: #96ad8b; background: #fffdf8; }
+    .step-cta-left { display: flex; align-items: center; gap: 12px; }
+    .step-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 10px; color: var(--apricot); background: #fff1e7; }
+    .step-cta b { display: block; font-size: 12px; }
+    .step-cta small { display: block; margin-top: 4px; color: #70776b; font-size: 10px; }
+
+    section { scroll-margin-top: 96px; }
+    .section { padding: 90px 0; }
+    .week-heading { display: flex; align-items: end; justify-content: space-between; gap: 28px; }
+    .progress-card { min-width: 255px; display: flex; align-items: center; gap: 12px; padding: 15px; border: 1px solid #d8cbb8; border-radius: 16px; background: var(--paper-2); }
+    .plate-ring { position: relative; width: 52px; height: 52px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--apricot) 0 0%, var(--moss) 0 26%, #dfd7c6 26% 100%); }
+    .plate-ring::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--paper); }
+    .plate-ring::after { content: attr(data-value) "%"; position: relative; z-index: 1; color: var(--moss); font-size: 11px; font-weight: 800; }
+    .progress-title { color: #6c776c; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .progress-help { margin: 4px 0 0; color: #5f6d62; font-size: 11px; line-height: 1.5; }
+    .save-status { display: flex; align-items: center; gap: 5px; margin-top: 7px; color: #7b8579; font-size: 10px; font-weight: 700; }
+    .save-status.saved { color: var(--moss); }
+    .week-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 24px; padding: 12px; border: 1px solid #d8cbb8; border-radius: 16px; background: var(--paper-2); }
+    .week-nav { display: flex; align-items: center; gap: 10px; }
+    .week-nav-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--moss); background: #e7dfd0; font-size: 20px; }
+    .week-range { min-width: 190px; text-align: center; }
+    .week-range small { display: block; color: var(--tomato); font-size: 9px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+    .week-range strong { display: block; margin-top: 4px; color: var(--moss); font-family: "DM Serif Display", Georgia, serif; font-size: 22px; font-weight: 400; text-transform: capitalize; }
+    .week-tools { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-top: 12px; }
+    .week-tools label { color: #6c776c; font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .week-tools input { display: block; width: 100%; margin-top: 5px; padding: 9px 10px; border: 1px solid #d8cbb8; border-radius: 11px; color: var(--moss); background: white; font: 700 11px Manrope, sans-serif; letter-spacing: normal; }
+    .week-export { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e4dac8; }
+    .week-export .btn { min-height: 34px; padding: 0 13px; font-size: 10px; }
+    .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 13px; margin-top: 28px; }
+    .day-card { position: relative; min-height: 350px; overflow: hidden; padding: 20px; border: 1px solid #d9ccb7; border-radius: 23px; box-shadow: 0 8px 22px rgba(83,80,53,.05); animation: rise .42s var(--ease) both; }
+    .day-card:nth-child(even) { transform: translateY(12px); }
+    .day-card.green { background: #edf2de; }
+    .day-card.peach { background: #f7ead7; }
+    .day-card.yellow { background: #f4e8bd; }
+    .day-card.blue { background: #e3efe8; }
+    .day-card.tomato { background: #f8e3d8; }
+    .day-label { color: #728074; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .day-number { margin-top: 3px; color: var(--moss); font-family: "DM Serif Display", Georgia, serif; font-size: 42px; line-height: 1; }
+    .card-tag { position: absolute; top: 0; right: 0; padding: 6px 9px; border-left: 1px solid rgba(183,192,173,.6); border-bottom: 1px solid rgba(183,192,173,.6); border-radius: 0 0 0 12px; color: #6c7a6d; background: rgba(255,250,240,.7); font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+    .day-toggle { position: absolute; top: 48px; right: 17px; width: 31px; height: 31px; display: grid; place-items: center; border: 1px solid #96a18c; border-radius: 50%; color: #6d7b6e; background: rgba(251,250,245,.7); }
+    .day-toggle.done { border-color: var(--moss); color: #fff; background: var(--moss); }
+    .meal-list { margin-top: 31px; }
+    .meal-field { display: block; padding-top: 12px; margin-top: 12px; border-top: 1px solid rgba(181,191,172,.7); }
+    .meal-field span { display: block; color: #6f7c70; font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .meal-field input { width: 100%; margin-top: 7px; padding: 0 0 3px; border: 0; border-bottom: 1px solid transparent; outline: 0; color: #34483c; background: transparent; font-size: 11px; font-weight: 800; line-height: 1.55; }
+    .meal-field input:hover { border-color: #9eaf95; }
+    .meal-field input:focus { border-color: var(--moss); }
+    .done-label { display: inline-flex; align-items: center; gap: 5px; margin-top: 16px; padding: 5px 9px; border-radius: 999px; color: var(--moss); background: rgba(255,255,255,.7); font-size: 10px; font-weight: 800; }
+    .week-note { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 24px; padding: 17px 20px; border-radius: 16px; background: #f9f6ed; }
+    .week-note p { max-width: 800px; margin: 0; color: #667266; font-size: 11px; line-height: 1.65; }
+    .week-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .small-btn { min-height: 38px; padding: 0 14px; font-size: 11px; }
+
+    .resolver-section { background: #f8efe1; }
+    .resolver-grid { display: grid; grid-template-columns: .72fr 1.28fr; align-items: end; gap: 42px; }
+    .tool-list { display: grid; gap: 8px; margin-top: 28px; }
+    .tool-tab { display: flex; align-items: center; gap: 11px; width: 100%; padding: 13px 15px; border: 1px solid #ddceb8; border-radius: 15px; color: #4d5d51; background: #fbf8f0; text-align: left; font-size: 11px; font-weight: 800; }
+    .tool-tab:hover { background: #fff; }
+    .tool-tab.active { border-color: var(--moss); color: #fffdf7; background: var(--moss); box-shadow: 0 10px 20px rgba(49,92,77,.14); }
+    .tool-tab .arrow { margin-left: auto; opacity: .6; }
+    .tool-panel { position: relative; overflow: hidden; min-height: 420px; padding: 32px; border: 1px solid #dac9b0; border-left: 7px solid var(--apricot); border-radius: 28px; background-color: var(--paper); box-shadow: var(--shadow); }
+    .tool-image { position: absolute; inset: 0 0 0 auto; width: 39%; overflow: hidden; pointer-events: none; }
+    .tool-image img { width: 100%; height: 100%; object-fit: cover; opacity: .82; }
+    .tool-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--paper), rgba(255,253,248,.25)); }
+    .tool-content { position: relative; z-index: 1; max-width: 650px; }
+    .tool-heading { display: flex; align-items: center; gap: 11px; }
+    .tool-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 13px; color: var(--moss); background: var(--sage-soft); }
+    .tool-heading .eyebrow { margin: 0; }
+    .now-tag { margin-left: auto; padding: 5px 7px; border: 1px solid #e7c6ae; border-radius: 5px; color: #b56445; background: #fff4e9; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+    .tool-panel h3 { max-width: 440px; margin: 21px 0 0; color: var(--moss); font-size: clamp(2.4rem, 4vw, 4rem); line-height: .95; letter-spacing: -.035em; }
+    .tool-panel > .tool-content > p { max-width: 560px; margin: 14px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 27px; }
+    .form-row.three { grid-template-columns: repeat(3, 1fr); }
+    .field-label { color: #456052; font-size: 11px; font-weight: 800; }
+    .field-label input, .field-label textarea, .field-label select { width: 100%; margin-top: 7px; padding: 12px; border: 1px solid #dbcdb8; border-radius: 12px; outline: 0; color: #3f5245; background: #fdfaf3; font-size: 12px; font-weight: 600; }
+    .field-label textarea { min-height: 105px; resize: vertical; line-height: 1.55; }
+    .field-label input:focus, .field-label textarea:focus, .field-label select:focus { border-color: #658a70; box-shadow: 0 0 0 3px rgba(101,138,112,.12); }
+    .tool-submit { margin-top: 14px; }
+    .tool-result { display: none; margin-top: 23px; padding: 15px; border: 1px solid #c9d7be; border-radius: 15px; background: #eef4e7; }
+    .tool-result.show { display: block; animation: rise .35s var(--ease) both; }
+    .result-heading { display: flex; align-items: center; gap: 7px; color: var(--moss); font-size: 11px; font-weight: 800; }
+    .tool-result p { margin: 8px 0 0; color: #40564a; font-size: 12px; line-height: 1.65; }
+    .tool-result small { display: block; margin-top: 10px; color: #69756b; font-size: 10px; line-height: 1.55; }
+    .result-list { margin: 10px 0 0; padding-left: 16px; color: #617168; font-size: 11px; line-height: 1.7; }
+
+    .shopping { padding: 92px 0 78px; }
+    .shopping-grid { display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; gap: 42px; }
+    .shopping-image { position: relative; min-height: 400px; overflow: hidden; padding: 40px; border-radius: 28px; background: #e7dbc1; }
+    .shopping-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .38; mix-blend-mode: multiply; }
+    .shopping-image-content { position: relative; max-width: 420px; }
+    .shopping-image h2 { margin: 15px 0 0; color: var(--moss); font-size: clamp(3rem, 5vw, 5rem); line-height: .93; letter-spacing: -.045em; }
+    .shopping-image p { margin: 20px 0 0; color: #526254; font-size: 13px; line-height: 1.7; }
+    .shopping-count { display: flex; align-items: center; gap: 12px; margin-top: 32px; }
+    .shopping-count-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px; color: var(--apricot); background: rgba(255,248,235,.8); }
+    .shopping-count strong { display: block; color: var(--moss); font-size: 23px; }
+    .shopping-count strong span { margin-left: 4px; color: #637063; font-size: 12px; font-weight: 600; }
+    .shopping-count small { color: #637063; font-size: 11px; }
+    .shopping-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+    .quick-tag { padding: 6px 9px; border-radius: 99px; color: var(--moss); background: #e8f0df; font-size: 9px; font-weight: 800; }
+    .shopping-list { overflow: hidden; border: 1px solid #dfd3bf; border-left: 7px solid #d5a359; border-radius: 24px; background: var(--paper); box-shadow: 0 12px 30px rgba(91,72,42,.07); }
+    .shopping-item { display: flex; align-items: center; gap: 13px; width: 100%; padding: 16px 18px; border: 0; color: var(--ink); background: transparent; text-align: left; }
+    .shopping-item + .shopping-item { border-top: 1px solid #ede4d4; }
+    .shopping-item:hover { background: #faf5e9; }
+    .item-check { width: 24px; height: 24px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid #b3b8aa; border-radius: 50%; color: transparent; }
+    .shopping-item.checked .item-check { border-color: var(--moss); color: white; background: var(--moss); }
+    .item-copy { min-width: 0; }
+    .item-copy b { display: block; color: #355044; font-size: 12px; }
+    .item-copy span { display: block; margin-top: 3px; color: #788176; font-size: 10px; }
+    .item-plus { margin-left: auto; color: #78907d; transition: transform 160ms var(--ease); }
+    .shopping-item.checked .item-plus { transform: rotate(45deg); }
+    .shopping-note { margin: 14px 0 0; color: #707b70; font-size: 10px; line-height: 1.65; }
+
+    .disclaimer { padding: 0 0 34px; }
+    .disclaimer-inner { display: flex; align-items: end; justify-content: space-between; gap: 28px; padding: 38px 40px; border-radius: 28px; color: #f8f4eb; background: var(--moss); }
+    .disclaimer h2 { max-width: 740px; margin: 14px 0 0; font-size: clamp(2.5rem, 4vw, 4.4rem); line-height: .95; letter-spacing: -.04em; }
+    .disclaimer p { max-width: 760px; margin: 16px 0 0; color: #d8e2d1; font-size: 13px; line-height: 1.7; }
+    .disclaimer .eyebrow { color: #c7d6bc; }
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px 0; border-top: 1px solid var(--line); color: #778075; font-size: 10px; }
+    .footer span { display: flex; align-items: center; gap: 7px; }
+
+    .modal-backdrop { position: fixed; z-index: 50; inset: 0; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(39,60,50,.45); backdrop-filter: blur(6px); }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(560px, 100%); overflow: hidden; border-radius: 28px; background: var(--paper); box-shadow: 0 28px 90px rgba(26,45,35,.34); animation: rise .35s var(--ease) both; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 19px 23px; border-bottom: 1px solid #eadfce; }
+    .modal-heading { display: flex; align-items: center; gap: 11px; }
+    .modal-heading-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; color: var(--moss); background: var(--sage-soft); }
+    .modal-heading p { margin: 0; color: var(--tomato); font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+    .modal-heading small { display: block; margin-top: 4px; color: #6b776c; font-size: 10px; }
+    .close-btn { width: 35px; height: 35px; display: grid; place-items: center; border: 0; border-radius: 50%; color: #526358; background: #f1e9db; }
+    .modal-body { padding: 24px; }
+    .modal-progress { height: 6px; overflow: hidden; margin-bottom: 27px; border-radius: 99px; background: #eee5d5; }
+    .modal-progress div { width: 25%; height: 100%; border-radius: 99px; background: var(--apricot); transition: width .3s var(--ease); }
+    .modal-body .eyebrow { margin: 0; }
+    .modal-body h2 { margin: 10px 0 0; color: var(--moss); font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: .97; letter-spacing: -.035em; }
+    .answer-list { display: grid; gap: 8px; margin-top: 23px; }
+    .answer { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 14px 15px; border: 1px solid #e0d4c1; border-radius: 15px; color: #56655a; background: #fdfaf3; text-align: left; font-size: 12px; font-weight: 800; }
+    .answer:hover { border-color: #9caf98; }
+    .answer.selected { border-color: var(--moss); color: var(--moss); background: #edf4e8; }
+    .answer-check { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid #b8b9ad; border-radius: 50%; color: transparent; }
+    .answer.selected .answer-check { border-color: var(--moss); color: white; background: var(--moss); }
+    .modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 23px; }
+    .back-btn { border: 0; color: #637267; background: transparent; font-size: 11px; font-weight: 800; }
+    .back-btn:disabled { opacity: .35; }
+    .modal-actions .btn:disabled { opacity: .4; }
+
+    .toast { position: fixed; z-index: 70; right: 20px; bottom: 20px; display: none; max-width: 340px; padding: 12px 15px; border: 1px solid #c9d7be; border-radius: 13px; color: var(--moss); background: #eef4e7; box-shadow: 0 12px 30px rgba(44,68,54,.18); font-size: 11px; font-weight: 800; }
+    .toast.show { display: block; animation: rise .3s var(--ease) both; }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    @media (min-width: 1500px) { .side-index { display: block; } }
+    @media print {
+      body * { visibility: hidden !important; }
+      #semana, #semana * { visibility: visible !important; }
+      #semana { position: absolute; inset: 0; width: 100%; padding: 24px !important; background: white !important; }
+      #semana button, #semana input { display: none !important; }
+      #semana .week-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    }
+
+    @media (max-width: 1050px) {
+      .hero-content { width: 62%; padding: 44px; }
+      .hero-image { left: 42%; }
+      .week-grid { grid-template-columns: repeat(3, 1fr); }
+      .day-card:nth-child(even) { transform: none; }
+    }
+    @media (max-width: 820px) {
+      .main-nav, .topbar-actions { display: none; }
+      .mobile-menu-btn { display: grid; place-items: center; }
+      .hero { min-height: 0; }
+      .hero-image { position: relative; inset: auto; height: 265px; }
+      .hero-image::after { background: linear-gradient(0deg, rgba(223,233,210,.75), transparent 70%); }
+      .hero-content { width: 100%; min-height: 0; padding: 32px; }
+      .hero-middle { padding: 50px 0 40px; }
+      .hero h1 { font-size: clamp(4rem, 16vw, 6.2rem); }
+      .hero-stamp { bottom: 18px; right: 18px; }
+      .starting-point, .resolver-grid, .shopping-grid { grid-template-columns: 1fr; }
+      .resolver-grid, .shopping-grid { gap: 28px; }
+      .tool-image { width: 33%; opacity: .66; }
+      .week-heading { align-items: start; flex-direction: column; }
+      .progress-card { width: 100%; }
+      .disclaimer-inner { align-items: start; flex-direction: column; }
+    }
+    @media (max-width: 600px) {
+      .container { width: min(100% - 24px, 1376px); }
+      .topbar-inner { height: 64px; }
+      .brand-name { font-size: 18px; }
+      .hero-wrap { padding-top: 20px; }
+      .hero-content { padding: 24px; }
+      .hero h1 { font-size: clamp(3.6rem, 17vw, 5.2rem); }
+      .hero-description { font-size: 13px; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .hero-actions .btn { width: 100%; }
+      .hero-checks { gap: 8px; flex-direction: column; }
+      .hero-stamp { left: 18px; right: auto; }
+      .starting-copy, .starting-actions { padding: 25px; }
+      .steps { grid-template-columns: 1fr; }
+      .step-card { min-height: 0; }
+      .section { padding: 65px 0; }
+      .week-grid { grid-template-columns: 1fr; }
+      .week-controls { align-items: stretch; flex-direction: column; }
+      .week-nav { justify-content: space-between; }
+      .week-range { flex: 1; }
+      .week-controls .btn { width: 100%; }
+      .week-tools { grid-template-columns: 1fr; }
+      .week-export .btn { flex: 1; }
+      .day-card { min-height: 320px; }
+      .week-note { align-items: start; flex-direction: column; }
+      .week-actions { width: 100%; }
+      .week-actions .btn { flex: 1; }
+      .tool-panel { min-height: 0; padding: 23px; }
+      .tool-image { top: auto; width: 100%; height: 130px; opacity: .4; }
+      .tool-image::after { background: linear-gradient(0deg, var(--paper), rgba(255,253,248,.1)); }
+      .tool-content { padding-bottom: 115px; }
+      .tool-panel h3 { font-size: 3rem; }
+      .form-row, .form-row.three { grid-template-columns: 1fr; }
+      .shopping-image { min-height: 360px; padding: 28px; }
+      .disclaimer-inner { padding: 28px; }
+      .footer { align-items: start; flex-direction: column; }
+      .modal-backdrop { align-items: end; padding: 0; }
+      .modal { border-radius: 25px 25px 0 0; }
+      .modal-body { padding: 22px 20px 25px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#inicio" aria-label="Ir al inicio">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span class="brand-name display">Plato en calma</span>
+      </a>
+      <nav class="main-nav" aria-label="Navegación principal">
+        <button class="nav-btn active" data-target="inicio">Hoy</button>
+        <button class="nav-btn" data-target="semana">Mi semana</button>
+        <button class="nav-btn" data-target="resolver">Resolver ahora</button>
+        <button class="nav-btn" data-target="compra">Compra</button>
+        <button class="nav-btn" data-target="glucosa">Glucosa</button>
+      </nav>
+      <div class="topbar-actions">
+        <button class="btn btn-accent" data-open-diagnosis>Ordenar mis próximos días <span aria-hidden="true">→</span></button>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuButton" aria-label="Abrir menú" aria-expanded="false"><span id="menuIcon">☰</span></button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <div class="container">
+        <button data-target="inicio">Hoy</button>
+        <button data-target="semana">Mi semana</button>
+        <button data-target="resolver">Resolver ahora</button>
+        <button data-target="compra">Compra</button>
+        <button data-target="glucosa">Glucosa</button>
+        <button data-open-diagnosis style="color:#fff;background:#e57d59;margin-top:7px;text-align:center;">Abrir mi punto de partida →</button>
+      </div>
+    </div>
+  </header>
+
+  <aside class="side-index grain" aria-label="Índice del cuaderno">
+    <p class="index-label">Índice</p>
+    <nav>
+      <button data-target="inicio" class="active" aria-label="Ir a Hoy">⌂<span>01 · Hoy</span></button>
+      <button data-target="semana" aria-label="Ir a Mi semana">▦<span>02 · Mi semana</span></button>
+      <button data-target="resolver" aria-label="Ir a Resolver ahora">✦<span>03 · Resolver</span></button>
+      <button data-target="compra" aria-label="Ir a Compra">☷<span>04 · Compra</span></button>
+      <button data-target="glucosa" aria-label="Ir a Glucosa">♥<span>05 · Glucosa</span></button>
+    </nav>
+  </aside>
+
+  <main>
+    <section class="hero-wrap" id="inicio">
+      <div class="container">
+        <div class="hero grain">
+          <div class="hero-image">
+            <img src="/manus-storage/organiza-comidas-hero_d20117cb.jpg" alt="Plato sencillo con ingredientes organizados sobre una mesa" />
+          </div>
+          <div class="hero-content">
+            <div class="hero-kicker"><span class="dot"></span> Tu espacio para decidir con calma</div>
+            <div class="hero-middle">
+              <div class="pill">✦ &nbsp; No es una dieta. Es una estructura.</div>
+              <h1 class="display">Menos vueltas.<br /><em>Más mesa.</em></h1>
+              <p class="hero-description">Organiza tus próximas comidas en pocos minutos y guarda opciones claras para cuando aparezca la duda.</p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" data-open-diagnosis>Ver mi punto de partida <span aria-hidden="true">→</span></button>
+                <button class="btn btn-quiet" data-target="resolver">Abrir una opción rápida</button>
+              </div>
+            </div>
+            <div class="hero-checks">
+              <span><b class="check-symbol">✓</b> Diagnóstico corto</span>
+              <span><b class="check-symbol">✓</b> Semana consultable</span>
+              <span><b class="check-symbol">✓</b> Desde tu celular</span>
+            </div>
+          </div>
+          <div class="hero-stamp">
+            <span class="stamp-ring" aria-hidden="true"></span>
+            <div><p class="stamp-label">Punto de partida</p><p class="stamp-text">Decidir con una guía</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container" aria-labelledby="start-title">
+      <div class="starting-point">
+        <div class="starting-copy">
+          <p class="eyebrow">El punto de partida</p>
+          <h2 id="start-title" class="display">No te falta voluntad.<br />Te falta una referencia.</h2>
+          <p>La improvisación suele aparecer cuando tienes hambre y muchas opciones. Esta app convierte algunas respuestas en una estructura fácil de consultar.</p>
+        </div>
+        <div class="starting-actions">
+          <div class="steps">
+            <article class="step-card"><div class="number"><span>01</span><span class="tag">FICHA</span></div><b>Responde</b><p>cuatro preguntas simples</p></article>
+            <article class="step-card"><div class="number"><span>02</span><span class="tag">FICHA</span></div><b>Ordena</b><p>tus preferencias</p></article>
+            <article class="step-card"><div class="number"><span>03</span><span class="tag">FICHA</span></div><b>Consulta</b><p>una semana práctica</p></article>
+          </div>
+          <button class="step-cta" data-open-diagnosis>
+            <span class="step-cta-left"><span class="step-icon">▣</span><span><b>Ordenar mi punto de partida</b><small>Menos de 2 minutos · puedes ajustarla después</small></span></span><span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container" id="semana" aria-labelledby="week-title">
+      <div class="week-heading">
+        <div><p class="eyebrow">Tu plan de 7 días</p><h2 class="section-title display" id="week-title">Una semana para consultar,<br />no para obedecer.</h2><p class="section-copy">Empieza con un ritmo flexible que puedas abrir desde el celular. Edita cualquier comida directamente en su ficha y volverá a estar aquí cuando regreses.</p></div>
+        <div class="progress-card grain">
+          <div class="plate-ring" id="plateRing" data-value="0"></div>
+          <div><div class="progress-title">Semana en marcha</div><p class="progress-help">Marca un día cuando te haya resultado útil.</p><div class="save-status" id="saveStatus">Plan inicial</div></div>
+        </div>
+      </div>
+      <div class="week-controls">
+        <div class="week-nav"><button class="week-nav-btn" id="previousWeek" aria-label="Ver semana anterior">‹</button><div class="week-range"><small id="weekLabel">Semana actual</small><strong id="weekRange">19–25 de octubre</strong></div><button class="week-nav-btn" id="nextWeek" aria-label="Ver semana siguiente">›</button></div>
+        <div class="week-tools"><label>Ir a semana<input type="date" id="jumpDate" /></label><label>Duplicar hacia<input type="date" id="duplicateDate" /></label><button class="btn btn-primary small-btn" id="duplicateWeek">▣ &nbsp;Duplicar plan</button></div>
+      </div>
+      <div class="week-export"><button class="btn btn-soft small-btn" id="jumpToWeek">Abrir semana seleccionada</button><button class="btn btn-soft small-btn" id="exportCsv">↓ &nbsp;Exportar CSV</button><button class="btn btn-soft small-btn" id="printPdf">▣ &nbsp;Imprimir / PDF</button></div>
+      <div class="week-grid" id="weekGrid"></div>
+      <div class="week-note"><p>Las ideas mostradas son ejemplos de organización general. Ajusta ingredientes, horarios y cantidades a tus necesidades, preferencias y el acompañamiento de tu profesional sanitario cuando corresponda.</p><div class="week-actions"><button class="btn btn-soft small-btn" id="resetPlan">Restablecer semana</button><button class="btn btn-primary small-btn" data-open-diagnosis>Ajustar mi punto de partida</button></div></div>
+    </section>
+
+    <section class="section" id="glucosa" aria-labelledby="glucose-title" style="background:#e9f0e2;">
+      <div class="container">
+        <div class="resolver-grid">
+          <div><p class="eyebrow">Registro diario</p><h2 class="section-title display" id="glucose-title">Anota el dato.<br />Observa tu día.</h2><p class="section-copy">Guarda tus mediciones en un solo lugar para llevarlas a tus conversaciones con tu profesional sanitario. La app no interpreta valores ni genera diagnósticos.</p><div style="display:flex;align-items:flex-start;gap:10px;margin-top:28px;padding:15px;border:1px solid #c5d5bf;border-radius:16px;background:#f7fbf1;color:#526858;font-size:11px;line-height:1.6;"><span style="color:#315c4d;font-size:17px;">♥</span><p style="margin:0;"><strong style="color:#315c4d;">Tu privacidad importa.</strong> Este registro se guarda solo en este navegador. No compartas datos sensibles en dispositivos compartidos.</p></div></div>
+          <div class="tool-panel grain" style="border-left-color:#315c4d;background:#fffdf8;"><div class="tool-content"><div class="tool-heading"><span class="tool-icon">♥</span><p class="eyebrow">Nueva medición</p></div><h3 class="display">¿Qué quieres guardar?</h3><form id="glucoseForm" class="form-row" style="margin-top:27px;"><label class="field-label">Fecha<input required id="glucoseDate" type="date" /></label><label class="field-label">Hora <small style="font-weight:500;color:#829083;">(opcional)</small><input id="glucoseTime" type="time" /></label><label class="field-label">Nivel medido<input required id="glucoseValue" min="0" step="0.1" type="number" placeholder="Ej. 110" /></label><label class="field-label">Unidad<select id="glucoseUnit"><option value="mg/dL">mg/dL</option><option value="mmol/L">mmol/L</option></select></label><label class="field-label" style="grid-column:1/-1;">Momento <small style="font-weight:500;color:#829083;">(opcional)</small><select id="glucoseMoment"><option>Antes de comer</option><option>Después de comer</option><option>Al despertar</option><option>Antes de dormir</option><option>Otro momento</option></select></label><button type="submit" class="btn btn-primary" style="grid-column:1/-1;">＋ Guardar medición</button></form><p style="margin:16px 0 0;color:#788477;font-size:10px;line-height:1.6;">Introduce el valor tal como aparece en tu medidor. Si tienes dudas sobre una lectura o síntomas, contacta con tu profesional sanitario.</p></div></div>
+        </div>
+        <div style="margin-top:40px;padding:28px;border:1px solid #cbd9c3;border-radius:26px;background:#f7fbf1;"><div style="display:flex;align-items:end;justify-content:space-between;gap:12px;"><div><p class="eyebrow">Historial local</p><h3 class="display" style="margin:8px 0 0;color:#315c4d;font-size:36px;line-height:1;">Tus últimas mediciones</h3></div><p id="glucoseCount" style="margin:0;color:#748174;font-size:11px;">0 registros guardados</p></div><div id="glucoseHistory" style="margin-top:20px;"></div><p style="display:flex;gap:7px;align-items:flex-start;margin:20px 0 0;color:#728072;font-size:10px;line-height:1.6;">ⓘ El historial es una herramienta de registro, no un sistema de alertas. No cambies medicamentos ni tratamiento basándote únicamente en estos datos.</p></div>
+      </div>
+    </section>
+
+    <section class="section resolver-section" id="resolver" aria-labelledby="resolver-title">
+      <div class="container resolver-grid">
+        <div>
+          <p class="eyebrow">Cuando necesitas decidir ahora</p>
+          <h2 class="section-title display" id="resolver-title">Abre una puerta.<br />No una lista interminable.</h2>
+          <p class="section-copy">Tres recursos breves para esos momentos en que no quieres pensar demasiado. Úsalos como ayuda educativa y ajusta lo que necesitas.</p>
+          <div class="tool-list" role="tablist" aria-label="Herramientas rápidas">
+            <button class="tool-tab active" data-tool="selector" role="tab">▣ <span>Selector de emergencia</span><span class="arrow">›</span></button>
+            <button class="tool-tab" data-tool="generador" role="tab">♨ <span>Generador de comidas</span><span class="arrow">›</span></button>
+            <button class="tool-tab" data-tool="etiquetas" role="tab">⌁ <span>Detector de etiquetas</span><span class="arrow">›</span></button>
+          </div>
+        </div>
+        <div class="tool-panel grain" id="toolPanel">
+          <div class="tool-image"><img id="toolImage" src="/manus-storage/organiza-comidas-emergencia_dbd8266a.jpg" alt="Ingredientes organizados en un refrigerador" /></div>
+          <div class="tool-content">
+            <div class="tool-heading"><span class="tool-icon" id="toolIcon">▣</span><p class="eyebrow" id="toolLabel">Selector de emergencia</p><span class="now-tag">AHORA</span></div>
+            <h3 class="display" id="toolTitle">Lo que tienes puede ser suficiente.</h3>
+            <p id="toolDescription">Escribe algunos ingredientes disponibles y recibe una combinación práctica para revisar antes de comer.</p>
+            <div id="toolForm"></div>
+            <div class="tool-result" id="toolResult"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shopping" id="compra" aria-labelledby="shopping-title">
+      <div class="container shopping-grid">
+        <div class="shopping-image grain">
+          <img src="/manus-storage/organiza-comidas-week_e8a9ad7a.jpg" alt="Planificador semanal con ingredientes organizados" />
+          <div class="shopping-image-content"><p class="eyebrow">Antes de salir</p><h2 class="display" id="shopping-title">Que la lista decida contigo.</h2><p>Marca lo que necesitas para las ideas de tu semana. La selección se mantiene mientras sigues usando esta mini app.</p><div class="shopping-count"><span class="shopping-count-icon">▦</span><div><strong id="shoppingCount">1<span>de 5</span></strong><small>categorías listas</small></div></div></div>
+        </div>
+        <div>
+          <div class="shopping-heading"><p class="eyebrow">Checklist de compras</p><span class="quick-tag">Consulta rápida</span></div>
+          <div class="shopping-list grain" id="shoppingList"></div>
+          <p class="shopping-note">Una lista no sustituye una pauta profesional. Es una referencia para entrar al supermercado con menos improvisación.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="disclaimer container">
+      <div class="disclaimer-inner">
+        <div><p class="eyebrow">Un apunte importante</p><h2 class="display">No tienes que resolver cada comida desde cero.</h2><p>Esta herramienta es educativa y de organización. No diagnostica, no trata enfermedades y no reemplaza el consejo de profesionales sanitarios.</p></div>
+        <button class="btn" style="color:var(--moss);background:var(--gold);" data-open-diagnosis>Abrir mi punto de partida <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container footer"><span><span class="brand-mark" style="width:23px;height:23px;transform:scale(.65);transform-origin:left center;"><span></span></span> Plato en calma · organización cotidiana</span><span>♥ Recurso educativo, no tratamiento médico</span></footer>
+
+  <div class="modal-backdrop" id="diagnosisModal" role="dialog" aria-modal="true" aria-labelledby="diagnosisTitle">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-heading"><span class="modal-heading-icon">▣</span><div><p>Diagnóstico alimentario</p><small id="diagnosisStepLabel">Paso 1 de 4</small></div></div><button class="close-btn" data-close-diagnosis aria-label="Cerrar diagnóstico">×</button></div>
+      <div class="modal-body"><div class="modal-progress"><div id="diagnosisProgress"></div></div><p class="eyebrow" id="diagnosisEyebrow">Tus horarios</p><h2 class="display" id="diagnosisTitle">¿En qué momento del día se te hace más difícil decidir qué comer?</h2><div class="answer-list" id="answerList"></div><div class="modal-actions"><button class="back-btn" id="diagnosisBack" disabled>← Atrás</button><button class="btn btn-primary" id="diagnosisNext" disabled>Continuar <span aria-hidden="true">→</span></button></div></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const PLAN_KEY = "plato-en-calma:plan-semanal:v1";
+      const GLUCOSE_KEY = "plato-en-calma:registro-glucosa:v1";
+      const SHOP_KEY = "plato-en-calma:checklist:v1";
+      const weekdayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+      const mealTemplates = [
+        ["Yogur natural · fruta · nueces", "Ensalada tibia de garbanzos", "Tortilla + verduras salteadas"],
+        ["Tostada de tomate y huevo", "Pollo al horno + ensalada", "Crema de calabaza + queso"],
+        ["Avena + canela + pera", "Lentejas con verduras", "Tacos de pescado y col"],
+        ["Yogur + semillas + fruta", "Arroz + verduras + huevo", "Ensalada de atún y aguacate"],
+        ["Tostada + ricotta + fruta", "Pasta de legumbres con verduras", "Bandeja de verduras + pollo"],
+        ["Avena + yogur + fruta", "Bowl de arroz, huevo y verduras", "Crema de verduras + tostada"],
+        ["Tostada de aguacate + huevo", "Garbanzos salteados + ensalada", "Pescado + verduras al horno"]
+      ];
+      const planColors = ["green", "peach", "yellow", "blue", "tomato", "lavender", "sage"];
+      function weekStart(date = new Date()) {
+        const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const day = monday.getDay();
+        monday.setDate(monday.getDate() + (day === 0 ? -6 : 1 - day));
+        return monday;
+      }
+      function weekKey(date = new Date()) {
+        const monday = weekStart(date);
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+      }
+      function inputDate(date = new Date()) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
+      function weekOffsetFromToday(date) { return Math.round((weekStart(date).getTime() - weekStart(new Date()).getTime()) / (7 * 24 * 60 * 60 * 1000)); }
+      function formatWeekRange(date = new Date()) {
+        const monday = weekStart(date);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        const monthFormatter = new Intl.DateTimeFormat("es-ES", { month: "long" });
+        const startMonth = monthFormatter.format(monday);
+        const endMonth = monthFormatter.format(sunday);
+        return startMonth === endMonth ? `${monday.getDate()}–${sunday.getDate()} de ${endMonth}` : `${monday.getDate()} de ${startMonth}–${sunday.getDate()} de ${endMonth}`;
+      }
+      function createWeekPlan(previousPlan = [], date = new Date()) {
+        const monday = weekStart(date);
+        return weekdayNames.map((day, index) => {
+          const current = new Date(monday);
+          current.setDate(monday.getDate() + index);
+          const previous = previousPlan.find((item) => item.day === day);
+          return { day, date: String(current.getDate()).padStart(2, "0"), color: planColors[index], meals: previous && previous.meals && previous.meals.length === 3 ? [...previous.meals] : [...mealTemplates[index]] };
+        });
+      }
+      const defaultShopping = [
+        { id: "verduras", label: "Verduras y hojas", detail: "espinaca, tomate, calabaza" },
+        { id: "fruta", label: "Fruta", detail: "pera, plátano, frutos rojos" },
+        { id: "proteina", label: "Proteínas", detail: "huevos, pollo, yogur, atún" },
+        { id: "despensa", label: "Despensa", detail: "garbanzos, lentejas, avena" },
+        { id: "extra", label: "Extras prácticos", detail: "tortillas, semillas, frutos secos" }
+      ];
+      const diagnosticQuestions = [
+        { eyebrow: "Tus horarios", question: "¿En qué momento del día se te hace más difícil decidir qué comer?", options: ["Por la mañana", "Al mediodía", "Por la noche", "Va cambiando"] },
+        { eyebrow: "Tu ritmo", question: "¿Cuánto tiempo sueles tener para preparar una comida entre semana?", options: ["Menos de 15 min", "15–30 min", "Más de 30 min", "Depende del día"] },
+        { eyebrow: "Tu punto de partida", question: "¿Qué te ayudaría más a sentirte preparado/a esta semana?", options: ["Ideas para cada comida", "Una lista de compras", "Opciones con lo que ya tengo", "Entender mejor las etiquetas"] },
+        { eyebrow: "Tu preferencia", question: "¿Cómo prefieres organizar tus próximas comidas?", options: ["Con un plan flexible", "Con opciones repetibles", "Día a día", "Con preparaciones adelantadas"] }
+      ];
+      const toolData = {
+        selector: { label: "Selector de emergencia", title: "Lo que tienes puede ser suficiente.", description: "Escribe algunos ingredientes disponibles y recibe una combinación práctica para revisar antes de comer.", icon: "▣", image: "/manus-storage/organiza-comidas-emergencia_dbd8266a.jpg" },
+        generador: { label: "Generador de comidas", title: "Una idea clara para este momento.", description: "Elige tu momento del día y el tipo de comida que te apetece preparar.", icon: "♨", image: "/manus-storage/organiza-comidas-week_e8a9ad7a.jpg" },
+        etiquetas: { label: "Detector de etiquetas", title: "Lee lo importante con más calma.", description: "Introduce los datos que ves en el envase y recibe una guía educativa para ordenarlos.", icon: "⌁", image: "/manus-storage/organiza-comidas-week_e8a9ad7a.jpg" }
+      };
+
+      let weekOffset = 0;
+      let weeksByKey = {};
+      let weeklyPlan = createWeekPlan();
+      let completedDays = [];
+      let checkedShopping = ["verduras"];
+      let saveTimer = null;
+      let diagnosisStep = 0;
+      let diagnosisAnswers = [];
+      let activeTool = "selector";
+      let glucoseEntries = [];
+
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+      const clone = (value) => JSON.parse(JSON.stringify(value));
+      const iconCheck = "✓";
+
+      function showToast(message) {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+      }
+
+      function setSaveStatus(status) {
+        const element = $("#saveStatus");
+        element.classList.toggle("saved", status === "saved");
+        element.textContent = status === "saving" ? "Guardando cambios…" : status === "saved" ? "✓ Guardado en este dispositivo" : "Plan inicial";
+      }
+
+      function loadStoredData() {
+        try {
+          const stored = JSON.parse(window.localStorage.getItem(PLAN_KEY) || "null");
+          if (stored && stored.version === 3 && stored.weeks) {
+            weeksByKey = stored.weeks;
+            const current = weeksByKey[weekKey()] || { meals: createWeekPlan(), completedDays: [] };
+            weeklyPlan = current.meals;
+            completedDays = current.completedDays;
+            setSaveStatus("saved");
+          } else if (stored && (stored.version === 1 || stored.version === 2) && Array.isArray(stored.meals) && Array.isArray(stored.completedDays)) {
+            const current = { meals: createWeekPlan(stored.meals), completedDays: stored.version === 2 && stored.weekKey === weekKey() ? stored.completedDays : [] };
+            weeksByKey = { [weekKey()]: current };
+            weeklyPlan = current.meals;
+            completedDays = current.completedDays;
+            setSaveStatus("saved");
+          }
+          const shopping = JSON.parse(window.localStorage.getItem(SHOP_KEY) || "null");
+          if (Array.isArray(shopping)) checkedShopping = shopping;
+        } catch (error) {
+          setSaveStatus("initial");
+        }
+      }
+
+      function savePlan() {
+        setSaveStatus("saving");
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(() => {
+          try {
+            const displayedDate = new Date();
+            displayedDate.setDate(displayedDate.getDate() + weekOffset * 7);
+            weeksByKey[weekKey(displayedDate)] = { meals: weeklyPlan, completedDays };
+            window.localStorage.setItem(PLAN_KEY, JSON.stringify({ version: 3, weeks: weeksByKey, savedAt: new Date().toISOString() }));
+            setSaveStatus("saved");
+          } catch (error) {
+            setSaveStatus("initial");
+          }
+        }, 350);
+      }
+
+      function loadGlucose() {
+        try { const stored = JSON.parse(window.localStorage.getItem(GLUCOSE_KEY) || "[]"); if (Array.isArray(stored)) glucoseEntries = stored; } catch (error) { glucoseEntries = []; }
+      }
+
+      function saveGlucose() {
+        try { window.localStorage.setItem(GLUCOSE_KEY, JSON.stringify(glucoseEntries)); } catch (error) { /* almacenamiento no disponible */ }
+      }
+
+      function renderGlucose() {
+        const history = $("#glucoseHistory");
+        $("#glucoseCount").textContent = `${glucoseEntries.length} ${glucoseEntries.length === 1 ? "registro guardado" : "registros guardados"}`;
+        if (!glucoseEntries.length) { history.innerHTML = `<div style="padding:28px;border:1px dashed #bdcdb7;border-radius:16px;background:#fbfdf8;text-align:center;color:#7d897d;font-size:11px;">♥<br /><strong style="display:block;margin-top:8px;color:#526858;font-size:12px;">Aún no hay mediciones</strong><span style="display:block;margin-top:4px;">Cuando guardes una, aparecerá aquí ordenada por fecha.</span></div>`; return; }
+        history.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">${glucoseEntries.map((entry) => `<article style="position:relative;padding:16px;border:1px solid #d9e3d2;border-radius:16px;background:#fffdf8;"><button data-delete-glucose="${escapeAttribute(entry.id)}" aria-label="Eliminar medición" style="position:absolute;right:10px;top:10px;width:27px;height:27px;border:0;border-radius:50%;color:#718073;background:#f2e9dc;">×</button><p style="margin:0;color:#788477;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">${new Date(`${entry.date}T00:00:00`).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</p><p class="display" style="margin:9px 0 0;color:#315c4d;font-size:36px;">${escapeHtml(entry.value)}<span style="margin-left:4px;font-family:Manrope,Arial,sans-serif;font-size:12px;font-weight:800;">${escapeHtml(entry.unit)}</span></p><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;font-size:10px;font-weight:700;color:#68786b;"><span style="padding:5px 9px;border-radius:99px;background:#edf2de;">${escapeHtml(entry.moment)}</span>${entry.time ? `<span style="padding:5px 9px;border-radius:99px;background:#f5eadb;">${escapeHtml(entry.time)}</span>` : ""}</div></article>`).join("")}</div>`;
+        $$(`[data-delete-glucose]`).forEach((button) => button.addEventListener("click", () => { glucoseEntries = glucoseEntries.filter((entry) => entry.id !== button.dataset.deleteGlucose); saveGlucose(); renderGlucose(); showToast("Medición eliminada."); }));
+      }
+
+      function saveShopping() {
+        try { window.localStorage.setItem(SHOP_KEY, JSON.stringify(checkedShopping)); } catch (error) { /* almacenamiento no disponible */ }
+      }
+
+      function navigate(target) {
+        const section = document.getElementById(target);
+        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+        $$(".nav-btn, .side-index button").forEach((button) => button.classList.toggle("active", button.dataset.target === target));
+        $("#mobileMenu").classList.remove("open");
+        $("#mobileMenuButton").setAttribute("aria-expanded", "false");
+        $("#menuIcon").textContent = "☰";
+      }
+
+      function renderWeek() {
+        const grid = $("#weekGrid");
+        const displayedDate = new Date();
+        displayedDate.setDate(displayedDate.getDate() + weekOffset * 7);
+        $("#weekRange").textContent = formatWeekRange(displayedDate);
+        $("#weekLabel").textContent = weekOffset === 0 ? "Semana actual" : weekOffset < 0 ? "Semana anterior" : "Semana siguiente";
+        const progress = Math.round((completedDays.length / weeklyPlan.length) * 100);
+        const ring = $("#plateRing");
+        ring.dataset.value = progress;
+        const second = Math.min(progress + 26, 100);
+        ring.style.background = `conic-gradient(var(--apricot) 0 ${progress}%, var(--moss) ${progress}% ${second}%, #dfd7c6 ${second}% 100%)`;
+        grid.innerHTML = weeklyPlan.map((day, dayIndex) => {
+          const done = completedDays.includes(day.day);
+          return `<article class="day-card ${day.color} grain" style="animation-delay:${dayIndex * 50}ms">
+            <span class="card-tag">FICHA ${String(dayIndex + 1).padStart(2, "0")}</span>
+            <button class="day-toggle ${done ? "done" : ""}" data-day-toggle="${escapeAttribute(day.day)}" aria-label="Marcar ${escapeAttribute(day.day)} como revisado">${done ? iconCheck : "+"}</button>
+            <div class="day-label">${escapeHtml(day.day)}</div><div class="day-number">${escapeHtml(day.date)}</div>
+            <div class="meal-list">${day.meals.map((meal, mealIndex) => `<label class="meal-field"><span>${["Mañana", "Mediodía", "Noche"][mealIndex]}</span><input data-meal-day="${escapeAttribute(day.day)}" data-meal-index="${mealIndex}" aria-label="Editar comida de ${escapeAttribute(day.day)}" value="${escapeAttribute(meal)}" /></label>`).join("")}</div>
+            ${done ? `<span class="done-label">✓ Revisado</span>` : ""}
+          </article>`;
+        }).join("");
+
+        $$(`[data-day-toggle]`).forEach((button) => button.addEventListener("click", () => {
+          const day = button.dataset.dayToggle;
+          completedDays = completedDays.includes(day) ? completedDays.filter((value) => value !== day) : [...completedDays, day];
+          renderWeek(); savePlan();
+        }));
+        $$(`[data-meal-day]`).forEach((input) => input.addEventListener("input", (event) => {
+          const day = event.target.dataset.mealDay;
+          const mealIndex = Number(event.target.dataset.mealIndex);
+          const planDay = weeklyPlan.find((item) => item.day === day);
+          if (planDay) planDay.meals[mealIndex] = event.target.value;
+          savePlan();
+        }));
+      }
+
+
+      function changeWeek(offset) {
+        const nextOffset = weekOffset + offset;
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + nextOffset * 7);
+        const nextKey = weekKey(nextDate);
+        const nextWeek = weeksByKey[nextKey] || { meals: createWeekPlan([], nextDate), completedDays: [] };
+        weekOffset = nextOffset;
+        $("#jumpDate").value = inputDate(nextDate);
+        weeklyPlan = nextWeek.meals;
+        completedDays = nextWeek.completedDays;
+        renderWeek();
+        savePlan();
+      }
+
+      function duplicateCurrentWeek() {
+        const nextOffset = weekOffset + 1;
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + nextOffset * 7);
+        const duplicate = { meals: weeklyPlan.map((day) => ({ ...day, meals: [...day.meals] })), completedDays: [] };
+        weeksByKey[weekKey(nextDate)] = duplicate;
+        weekOffset = nextOffset;
+        weeklyPlan = duplicate.meals;
+        completedDays = [];
+        renderWeek();
+        savePlan();
+        showToast("Semana duplicada en el siguiente periodo.");
+      }
+
+      function jumpToSelectedWeek() {
+        const selectedDate = new Date(`${$("#jumpDate").value}T12:00:00`);
+        if (!$("#jumpDate").value) return;
+        const nextKey = weekKey(selectedDate);
+        const nextWeek = weeksByKey[nextKey] || { meals: createWeekPlan([], selectedDate), completedDays: [] };
+        weekOffset = weekOffsetFromToday(selectedDate);
+        weeklyPlan = nextWeek.meals;
+        completedDays = nextWeek.completedDays;
+        renderWeek();
+        savePlan();
+      }
+      function exportPlanCsv() {
+        const rows = [["Día", "Fecha", "Mañana", "Mediodía", "Noche"], ...weeklyPlan.map((day) => [day.day, day.date, ...day.meals])];
+        const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }));
+        link.download = `plato-en-calma-${weekKey(new Date(Date.now() + weekOffset * 7 * 86400000))}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }
+      function printPlanPdf() { window.print(); }
+      function renderShopping() {
+        $("#shoppingList").innerHTML = defaultShopping.map((item) => {
+          const checked = checkedShopping.includes(item.id);
+          return `<button class="shopping-item ${checked ? "checked" : ""}" data-shopping-id="${item.id}"><span class="item-check">✓</span><span class="item-copy"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.detail)}</span></span><span class="item-plus">＋</span></button>`;
+        }).join("");
+        const count = checkedShopping.length;
+        $("#shoppingCount").innerHTML = `${count}<span>de ${defaultShopping.length}</span>`;
+        $$(`[data-shopping-id]`).forEach((button) => button.addEventListener("click", () => {
+          const id = button.dataset.shoppingId;
+          checkedShopping = checkedShopping.includes(id) ? checkedShopping.filter((value) => value !== id) : [...checkedShopping, id];
+          renderShopping(); saveShopping();
+        }));
+      }
+
+      function renderToolForm() {
+        const form = $("#toolForm");
+        if (activeTool === "selector") {
+          form.innerHTML = `<label class="field-label">¿Qué tienes a mano?<textarea id="availableFood" placeholder="Ej. huevos, espinaca, garbanzos, tomate…"></textarea></label><button class="btn btn-accent tool-submit" id="toolSubmit">Proponer una combinación →</button>`;
+        } else if (activeTool === "generador") {
+          form.innerHTML = `<div class="form-row"><label class="field-label">Momento<select id="mealMoment"><option>Desayuno</option><option>Almuerzo</option><option selected>Cena</option><option>Snack</option></select></label><label class="field-label">Lo que necesito<select id="mealPreference"><option selected>Rápido y sencillo</option><option>Para preparar con tiempo</option><option>Con pocos ingredientes</option><option>Para aprovechar sobras</option></select></label></div><button class="btn btn-accent tool-submit" id="toolSubmit">Dame una idea concreta →</button>`;
+        } else {
+          form.innerHTML = `<div class="form-row three"><label class="field-label">Porción<input id="labelServing" inputmode="decimal" placeholder="Ej. 30 g" /></label><label class="field-label">Carbohidratos<input id="labelCarbs" inputmode="decimal" placeholder="Ej. 18" /></label><label class="field-label">Fibra<input id="labelFiber" inputmode="decimal" placeholder="Ej. 4" /></label></div><button class="btn btn-accent tool-submit" id="toolSubmit">Revisar con el checklist →</button>`;
+        }
+        $("#toolSubmit").addEventListener("click", renderToolResult);
+      }
+
+      function renderToolResult() {
+        const result = $("#toolResult");
+        result.classList.add("show");
+        if (activeTool === "selector") {
+          const value = ($("#availableFood")?.value || "algo de proteína, una verdura y un acompañamiento que tengas").trim();
+          result.innerHTML = `<div class="result-heading">✓ <span>Una opción para revisar</span></div><p>Combina ${escapeHtml(value)} en un plato rápido; por ejemplo, una tortilla con verduras y garbanzos, acompañada de tomate.</p><small>Esta es una sugerencia general de organización, no una pauta médica personalizada.</small>`;
+        } else if (activeTool === "generador") {
+          const moment = $("#mealMoment")?.value || "cena";
+          const preference = $("#mealPreference")?.value || "rápido y sencillo";
+          result.innerHTML = `<div class="result-heading">✓ <span>Una opción para revisar</span></div><p>Para ${escapeHtml(moment.toLowerCase())}, prueba una base simple de verduras o fruta, una fuente de proteína y un acompañamiento que te guste. Prioriza una preparación ${escapeHtml(preference.toLowerCase())}.</p><small>Esta es una sugerencia general de organización, no una pauta médica personalizada.</small>`;
+        } else {
+          const serving = $("#labelServing")?.value || "la porción indicada";
+          const carbs = $("#labelCarbs")?.value || "el dato de carbohidratos";
+          const fiber = $("#labelFiber")?.value || "el dato de fibra";
+          result.innerHTML = `<div class="result-heading">☷ <span>Checklist de lectura</span></div><p>Anota ${escapeHtml(serving)} y revisa ${escapeHtml(carbs)}; también te conviene mirar ${escapeHtml(fiber)}.</p><ul class="result-list"><li>Comprueba cuántas porciones contiene el envase.</li><li>Mira el dato en el contexto de la porción indicada.</li><li>Si tienes diabetes o una pauta nutricional, consulta cómo interpretar estos datos con tu profesional sanitario.</li></ul>`;
+        }
+      }
+
+      function setTool(tool) {
+        activeTool = tool;
+        const data = toolData[tool];
+        $$(".tool-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tool === tool));
+        $("#toolIcon").textContent = data.icon;
+        $("#toolLabel").textContent = data.label;
+        $("#toolTitle").textContent = data.title;
+        $("#toolDescription").textContent = data.description;
+        $("#toolImage").src = data.image;
+        $("#toolResult").classList.remove("show");
+        $("#toolResult").innerHTML = "";
+        renderToolForm();
+      }
+
+      function openDiagnosis() {
+        diagnosisStep = 0;
+        diagnosisAnswers = [];
+        $("#diagnosisModal").classList.add("open");
+        document.body.classList.add("modal-open");
+        renderDiagnosis();
+      }
+
+      function closeDiagnosis() {
+        $("#diagnosisModal").classList.remove("open");
+        document.body.classList.remove("modal-open");
+      }
+
+      function renderDiagnosis() {
+        const question = diagnosticQuestions[diagnosisStep];
+        $("#diagnosisStepLabel").textContent = `Paso ${diagnosisStep + 1} de ${diagnosticQuestions.length}`;
+        $("#diagnosisProgress").style.width = `${((diagnosisStep + 1) / diagnosticQuestions.length) * 100}%`;
+        $("#diagnosisEyebrow").textContent = question.eyebrow;
+        $("#diagnosisTitle").textContent = question.question;
+        $("#answerList").innerHTML = question.options.map((option) => `<button class="answer ${diagnosisAnswers[diagnosisStep] === option ? "selected" : ""}" data-answer="${escapeAttribute(option)}"><span>${escapeHtml(option)}</span><span class="answer-check">✓</span></button>`).join("");
+        $$(`[data-answer]`).forEach((button) => button.addEventListener("click", () => { diagnosisAnswers[diagnosisStep] = button.dataset.answer; renderDiagnosis(); }));
+        $("#diagnosisBack").disabled = diagnosisStep === 0;
+        $("#diagnosisNext").disabled = !diagnosisAnswers[diagnosisStep];
+        $("#diagnosisNext").innerHTML = diagnosisStep === diagnosticQuestions.length - 1 ? "Ver mi estructura →" : "Continuar →";
+      }
+
+      function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character])); }
+      function escapeAttribute(value) { return escapeHtml(value); }
+
+      function bindEvents() {
+        $$(`[data-target]`).forEach((button) => button.addEventListener("click", () => navigate(button.dataset.target)));
+        $$(`[data-open-diagnosis]`).forEach((button) => button.addEventListener("click", openDiagnosis));
+        $$(`[data-close-diagnosis]`).forEach((button) => button.addEventListener("click", closeDiagnosis));
+        $("#diagnosisModal").addEventListener("click", (event) => { if (event.target.id === "diagnosisModal") closeDiagnosis(); });
+        $("#diagnosisBack").addEventListener("click", () => { if (diagnosisStep > 0) { diagnosisStep -= 1; renderDiagnosis(); } });
+        $("#diagnosisNext").addEventListener("click", () => {
+          if (!diagnosisAnswers[diagnosisStep]) return;
+          if (diagnosisStep < diagnosticQuestions.length - 1) { diagnosisStep += 1; renderDiagnosis(); return; }
+          closeDiagnosis(); showToast("Tu estructura está lista para consultar."); navigate("semana");
+        });
+        $("#glucoseForm").addEventListener("submit", (event) => {
+          event.preventDefault();
+          const entry = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, date: $("#glucoseDate").value, time: $("#glucoseTime").value, value: $("#glucoseValue").value, unit: $("#glucoseUnit").value, moment: $("#glucoseMoment").value };
+          if (!entry.date || !entry.value) return;
+          glucoseEntries = [entry, ...glucoseEntries].slice(0, 90);
+          $("#glucoseValue").value = ""; $("#glucoseTime").value = "";
+          saveGlucose(); renderGlucose(); showToast("Medición guardada en este dispositivo.");
+        });
+        $("#glucoseDate").value = new Date().toISOString().slice(0, 10);
+        const nextWeekDate = new Date(); nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+        $("#jumpDate").value = inputDate();
+        $("#duplicateDate").value = inputDate(nextWeekDate);
+        $("#previousWeek").addEventListener("click", () => changeWeek(-1));
+        $("#nextWeek").addEventListener("click", () => changeWeek(1));
+        $("#duplicateWeek").addEventListener("click", () => {
+          const target = new Date(`${$("#duplicateDate").value}T12:00:00`);
+          if (!$("#duplicateDate").value) return;
+          const duplicate = { meals: weeklyPlan.map((day) => ({ ...day, meals: [...day.meals] })), completedDays: [] };
+          weeksByKey[weekKey(target)] = duplicate; weekOffset = weekOffsetFromToday(target); $("#jumpDate").value = inputDate(target); weeklyPlan = duplicate.meals; completedDays = []; renderWeek(); savePlan(); showToast("Semana duplicada en la fecha elegida.");
+        });
+        $("#jumpToWeek").addEventListener("click", jumpToSelectedWeek);
+        $("#exportCsv").addEventListener("click", exportPlanCsv);
+        $("#printPdf").addEventListener("click", printPlanPdf);
+        $("#resetPlan").addEventListener("click", () => {
+          const resetDate = new Date(); resetDate.setDate(resetDate.getDate() + weekOffset * 7);
+          weeklyPlan = createWeekPlan([], resetDate); completedDays = []; renderWeek(); savePlan(); showToast("La semana volvió a su estructura inicial.");
+        });
+        $$(`[data-tool]`).forEach((button) => button.addEventListener("click", () => setTool(button.dataset.tool)));
+        $("#mobileMenuButton").addEventListener("click", () => {
+          const menu = $("#mobileMenu");
+          const open = menu.classList.toggle("open");
+          $("#mobileMenuButton").setAttribute("aria-expanded", String(open));
+          $("#menuIcon").textContent = open ? "×" : "☰";
+        });
+        document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeDiagnosis(); });
+      }
+
+      loadStoredData();
+      loadGlucose();
+      renderWeek();
+      renderShopping();
+      renderGlucose();
+      renderToolForm();
+      bindEvents();
+    })();
+  </script>
+</body>
+</html>
