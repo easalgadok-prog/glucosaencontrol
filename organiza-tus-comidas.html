@@ -240,6 +240,15 @@
     .item-plus { margin-left: auto; color: #78907d; transition: transform 160ms var(--ease); }
     .shopping-item.checked .item-plus { transform: rotate(45deg); }
     .shopping-note { margin: 14px 0 0; color: #707b70; font-size: 10px; line-height: 1.65; }
+    .custom-shopping-form { display: flex; gap: 8px; margin-top: 14px; }
+    .custom-shopping-form input, .custom-shopping-form select { min-width: 0; flex: 1; padding: 10px 12px; border: 1px solid #dbcdb8; border-radius: 11px; color: var(--ink); background: #fdfaf3; font: 600 11px Manrope, sans-serif; }
+    .custom-shopping-form .btn { min-height: 36px; padding: 0 13px; font-size: 10px; }
+    .shopping-group-title { padding: 8px 18px; border-bottom: 1px solid #ede4d4; background: #f7f1e6; color: #9b674f; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    .shopping-row { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 0; border-bottom: 1px solid #ede4d4; }
+    .shopping-row .shopping-item { flex: 1; border-bottom: 0; }
+    .shopping-quantity { flex-shrink: 0; padding: 5px 7px; border-radius: 8px; background: #f1eadc; color: #657064; font-size: 9px; font-weight: 700; }
+    .shopping-edit, .shopping-delete { flex-shrink: 0; border: 0; background: transparent; font-size: 9px; font-weight: 800; cursor: pointer; }
+    .shopping-edit { color: #315c4d; } .shopping-delete { color: #b35b43; }
 
     .disclaimer { padding: 0 0 34px; }
     .disclaimer-inner { display: flex; align-items: end; justify-content: space-between; gap: 28px; padding: 38px 40px; border-radius: 28px; color: #f8f4eb; background: var(--moss); }
@@ -459,7 +468,7 @@
         <div class="week-nav"><button class="week-nav-btn" id="previousWeek" aria-label="Ver semana anterior">‹</button><div class="week-range"><small id="weekLabel">Semana actual</small><strong id="weekRange">19–25 de octubre</strong></div><button class="week-nav-btn" id="nextWeek" aria-label="Ver semana siguiente">›</button></div>
         <div class="week-tools"><label>Ir a semana<input type="date" id="jumpDate" /></label><label>Duplicar hacia<input type="date" id="duplicateDate" /></label><button class="btn btn-primary small-btn" id="duplicateWeek">▣ &nbsp;Duplicar plan</button></div>
       </div>
-      <div class="week-export"><button class="btn btn-soft small-btn" id="jumpToWeek">Abrir semana seleccionada</button><button class="btn btn-soft small-btn" id="exportCsv">↓ &nbsp;Exportar CSV</button><button class="btn btn-soft small-btn" id="printPdf">▣ &nbsp;Imprimir / PDF</button></div>
+      <div class="week-export"><button class="btn btn-soft small-btn" id="jumpToWeek">Abrir semana seleccionada</button><button class="btn btn-soft small-btn" id="exportCsv">↓ &nbsp;Exportar plan + compras</button><button class="btn btn-soft small-btn" id="printPdf">▣ &nbsp;Imprimir / PDF</button></div>
       <div class="week-grid" id="weekGrid"></div>
       <div class="week-note"><p>Las ideas mostradas son ejemplos de organización general. Ajusta ingredientes, horarios y cantidades a tus necesidades, preferencias y el acompañamiento de tu profesional sanitario cuando corresponda.</p><div class="week-actions"><button class="btn btn-soft small-btn" id="resetPlan">Restablecer semana</button><button class="btn btn-primary small-btn" data-open-diagnosis>Ajustar mi punto de partida</button></div></div>
     </section>
@@ -508,6 +517,7 @@
         <div>
           <div class="shopping-heading"><p class="eyebrow">Checklist de compras</p><span class="quick-tag">Consulta rápida</span></div>
           <div class="shopping-list grain" id="shoppingList"></div>
+          <form id="customShoppingForm" class="custom-shopping-form"><input id="customShoppingName" aria-label="Añadir producto personalizado" placeholder="Producto personalizado" /><input id="customShoppingQuantity" aria-label="Cantidad" inputmode="decimal" placeholder="Cantidad" value="1" /><input id="customShoppingUnit" aria-label="Unidad" placeholder="Unidad" value="unidad" /><select id="customShoppingCategory" aria-label="Categoría"><option value="supermercado">Supermercado</option><option value="despensa">Despensa</option><option value="refrigerados">Refrigerados</option><option value="frescos">Frescos</option></select><button class="btn btn-soft small-btn" type="submit">Añadir</button></form>
           <p class="shopping-note">Una lista no sustituye una pauta profesional. Es una referencia para entrar al supermercado con menos improvisación.</p>
         </div>
       </div>
@@ -581,12 +591,16 @@
         });
       }
       const defaultShopping = [
-        { id: "verduras", label: "Verduras y hojas", detail: "espinaca, tomate, calabaza" },
-        { id: "fruta", label: "Fruta", detail: "pera, plátano, frutos rojos" },
-        { id: "proteina", label: "Proteínas", detail: "huevos, pollo, yogur, atún" },
-        { id: "despensa", label: "Despensa", detail: "garbanzos, lentejas, avena" },
-        { id: "extra", label: "Extras prácticos", detail: "tortillas, semillas, frutos secos" }
+        { id: "verduras", label: "Verduras y hojas", detail: "espinaca, tomate, calabaza", category: "frescos", quantity: "1", unit: "selección", keywords: ["espinaca", "tomate", "calabaza", "verdura", "col", "aguacate"] },
+        { id: "fruta", label: "Fruta", detail: "pera, plátano, frutos rojos", category: "frescos", quantity: "1", unit: "selección", keywords: ["pera", "plátano", "fruta", "frutos rojos", "manzana"] },
+        { id: "proteina", label: "Proteínas", detail: "huevos, pollo, yogur, atún", category: "refrigerados", quantity: "1", unit: "selección", keywords: ["huevo", "pollo", "yogur", "atún", "pescado", "queso", "ricotta"] },
+        { id: "despensa", label: "Despensa", detail: "garbanzos, lentejas, avena", category: "despensa", quantity: "1", unit: "selección", keywords: ["garbanzo", "lenteja", "avena", "arroz", "pasta"] },
+        { id: "extra", label: "Extras prácticos", detail: "tortillas, semillas, frutos secos", category: "supermercado", quantity: "1", unit: "selección", keywords: ["tortilla", "semilla", "nuez", "fruto seco", "canela"] }
       ];
+      function getShoppingItems() {
+        const text = weeklyPlan.flatMap((day) => day.meals).join(" ").toLowerCase();
+        return [...defaultShopping.map((item) => ({ ...item, detail: item.keywords.filter((keyword) => text.includes(keyword)).slice(0, 5).join(", ") || item.detail })), ...customShopping];
+      }
       const diagnosticQuestions = [
         { eyebrow: "Tus horarios", question: "¿En qué momento del día se te hace más difícil decidir qué comer?", options: ["Por la mañana", "Al mediodía", "Por la noche", "Va cambiando"] },
         { eyebrow: "Tu ritmo", question: "¿Cuánto tiempo sueles tener para preparar una comida entre semana?", options: ["Menos de 15 min", "15–30 min", "Más de 30 min", "Depende del día"] },
@@ -604,6 +618,7 @@
       let weeklyPlan = createWeekPlan();
       let completedDays = [];
       let checkedShopping = ["verduras"];
+      let customShopping = [];
       let saveTimer = null;
       let diagnosisStep = 0;
       let diagnosisAnswers = [];
@@ -647,6 +662,7 @@
           }
           const shopping = JSON.parse(window.localStorage.getItem(SHOP_KEY) || "null");
           if (Array.isArray(shopping)) checkedShopping = shopping;
+          else if (shopping && Array.isArray(shopping.checked)) { checkedShopping = shopping.checked; customShopping = Array.isArray(shopping.custom) ? shopping.custom.map((item) => ({ category: "supermercado", quantity: "1", unit: "unidad", ...item })) : []; }
         } catch (error) {
           setSaveStatus("initial");
         }
@@ -685,7 +701,7 @@
       }
 
       function saveShopping() {
-        try { window.localStorage.setItem(SHOP_KEY, JSON.stringify(checkedShopping)); } catch (error) { /* almacenamiento no disponible */ }
+        try { window.localStorage.setItem(SHOP_KEY, JSON.stringify({ checked: checkedShopping, custom: customShopping })); } catch (error) { /* almacenamiento no disponible */ }
       }
 
       function navigate(target) {
@@ -774,7 +790,8 @@
         savePlan();
       }
       function exportPlanCsv() {
-        const rows = [["Día", "Fecha", "Mañana", "Mediodía", "Noche"], ...weeklyPlan.map((day) => [day.day, day.date, ...day.meals])];
+        const shoppingItems = getShoppingItems();
+        const rows = [["PLAN SEMANAL"], ["Día", "Fecha", "Mañana", "Mediodía", "Noche"], ...weeklyPlan.map((day) => [day.day, day.date, ...day.meals]), [], ["LISTA DE COMPRAS"], ["Producto", "Cantidad", "Unidad", "Detalle", "Estado"], ...shoppingItems.map((item) => [item.label, item.quantity, item.unit, item.detail, checkedShopping.includes(item.id) ? "Listo" : "Pendiente"])];
         const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }));
@@ -783,18 +800,23 @@
         URL.revokeObjectURL(link.href);
       }
       function printPlanPdf() { window.print(); }
+      function editCustomShoppingItem(item) {
+        const label = window.prompt("Nombre del producto", item.label)?.trim(); if (!label) return;
+        const quantity = window.prompt("Cantidad", item.quantity || "1")?.trim() || item.quantity || "1";
+        const unit = window.prompt("Unidad", item.unit || "unidad")?.trim() || item.unit || "unidad";
+        customShopping = customShopping.map((current) => current.id === item.id ? { ...current, label, quantity, unit } : current); renderShopping(); saveShopping();
+      }
+      function deleteCustomShoppingItem(id) { customShopping = customShopping.filter((item) => item.id !== id); checkedShopping = checkedShopping.filter((value) => value !== id); renderShopping(); saveShopping(); }
       function renderShopping() {
-        $("#shoppingList").innerHTML = defaultShopping.map((item) => {
-          const checked = checkedShopping.includes(item.id);
-          return `<button class="shopping-item ${checked ? "checked" : ""}" data-shopping-id="${item.id}"><span class="item-check">✓</span><span class="item-copy"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.detail)}</span></span><span class="item-plus">＋</span></button>`;
-        }).join("");
-        const count = checkedShopping.length;
-        $("#shoppingCount").innerHTML = `${count}<span>de ${defaultShopping.length}</span>`;
-        $$(`[data-shopping-id]`).forEach((button) => button.addEventListener("click", () => {
-          const id = button.dataset.shoppingId;
-          checkedShopping = checkedShopping.includes(id) ? checkedShopping.filter((value) => value !== id) : [...checkedShopping, id];
-          renderShopping(); saveShopping();
-        }));
+        const shoppingItems = getShoppingItems();
+        const labels = { frescos: "Frescos", refrigerados: "Refrigerados", despensa: "Despensa", supermercado: "Supermercado" };
+        const groups = ["frescos", "refrigerados", "despensa", "supermercado"];
+        $("#shoppingList").innerHTML = groups.map((category) => { const items = shoppingItems.filter((item) => item.category === category); if (!items.length) return ""; return `<div class="shopping-group"><div class="shopping-group-title">${labels[category]}</div>${items.map((item) => { const checked = checkedShopping.includes(item.id); return `<div class="shopping-row"><button class="shopping-item ${checked ? "checked" : ""}" data-shopping-id="${item.id}"><span class="item-check">✓</span><span class="item-copy"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.detail)}</span></span></button><span class="shopping-quantity">${escapeHtml(item.quantity)} ${escapeHtml(item.unit)}</span>${item.custom ? `<button class="shopping-edit" data-edit-shopping="${item.id}">Editar</button><button class="shopping-delete" data-delete-shopping="${item.id}">Eliminar</button>` : ""}</div>`; }).join("")}</div>`; }).join("");
+        const count = checkedShopping.filter((id) => shoppingItems.some((item) => item.id === id)).length;
+        $("#shoppingCount").innerHTML = `${count}<span>de ${shoppingItems.length}</span>`;
+        $$(`[data-shopping-id]`).forEach((button) => button.addEventListener("click", () => { const id = button.dataset.shoppingId; checkedShopping = checkedShopping.includes(id) ? checkedShopping.filter((value) => value !== id) : [...checkedShopping, id]; renderShopping(); saveShopping(); }));
+        $$(`[data-edit-shopping]`).forEach((button) => button.addEventListener("click", () => editCustomShoppingItem(customShopping.find((item) => item.id === button.dataset.editShopping))));
+        $$(`[data-delete-shopping]`).forEach((button) => button.addEventListener("click", () => deleteCustomShoppingItem(button.dataset.deleteShopping)));
       }
 
       function renderToolForm() {
@@ -895,6 +917,7 @@
         $("#duplicateDate").value = inputDate(nextWeekDate);
         $("#previousWeek").addEventListener("click", () => changeWeek(-1));
         $("#nextWeek").addEventListener("click", () => changeWeek(1));
+        $("#customShoppingForm").addEventListener("submit", (event) => { event.preventDefault(); const input = $("#customShoppingName"); const label = input.value.trim(); if (!label) return; customShopping = [...customShopping, { id: `custom-${Date.now()}`, label, detail: "Producto añadido por ti", quantity: $("#customShoppingQuantity").value || "1", unit: $("#customShoppingUnit").value || "unidad", category: $("#customShoppingCategory").value, custom: true }]; input.value = ""; renderShopping(); saveShopping(); });
         $("#duplicateWeek").addEventListener("click", () => {
           const target = new Date(`${$("#duplicateDate").value}T12:00:00`);
           if (!$("#duplicateDate").value) return;
